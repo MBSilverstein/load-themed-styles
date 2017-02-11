@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import {
+  activateTheming,
   detokenize,
   loadTheme,
   splitStyles,
@@ -76,6 +77,7 @@ describe('detokenize', () => {
     configureLoadStyles(callback);
 
     loadStyles('.foo { color: "[theme:fooColor, default: #FFF]" }');
+    activateTheming();
     expect(subject).to.equal(expected);
 
     configureLoadStyles(undefined);

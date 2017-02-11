@@ -30,7 +30,9 @@ interface IExtendedHtmlStyleElement extends HTMLStyleElement {
 interface IThemeState {
   theme: ITheme;
   lastStyleElement: IExtendedHtmlStyleElement;
+  pendingStyles?: ThemableArray[];
   registeredStyles: IStyleRecord[];
+  useDom?: boolean;
   loadStyles: (styles: string) => void;
 }
 
@@ -50,8 +52,14 @@ const _root: any = (typeof window === 'undefined') ? global : window; // tslint:
 const _themeState: IThemeState = _root.__themeState__ = _root.__themeState__ || {
   theme: undefined,
   lastStyleElement: undefined,
-  registeredStyles: []
+  pendingStyles: [],
+  registeredStyles: [],
+  useDom: false
 };
+
+// Ensure a pendingStyles array is present, for backwards compatibility
+// with older versions of this module on the same page.
+_themeState.pendingStyles = _themeState.pendingStyles || [];
 
 /**
  * Matches theming tokens. For example, "[theme: themeSlotName, default: #FFF]" (including the quotes).
@@ -75,7 +83,20 @@ export function loadStyles(styles: string | ThemableArray): void {
     _injectStylesWithCssText = shouldUseCssText();
   }
 
-  applyThemableStyles(styleParts);
+  if (_themeState.useDom) {
+    applyThemableStyles(styleParts);
+  } else {
+    _themeState.pendingStyles.push(styleParts);
+  }
+}
+
+export function activateTheming(): void {
+  _themeState.useDom = true;
+  const pendingStyles: ThemableArray[] = _themeState.pendingStyles;
+  for (const styleParts of pendingStyles) {
+    applyThemableStyles(styleParts);
+  }
+  _themeState.pendingStyles = [];
 }
 
 /**
